@@ -78,7 +78,7 @@ if st.button("🔄 スプレッドシートの最新データを強制再読み�
     st.rerun()
 
 
-# 1. データ読み込み（JSONまるごと対応版）
+# 1. データ読み込み（どんな形式の鍵でも自動正規化する超強固版）
 @st.cache_data(ttl=60)
 def load_data():
     scopes = [
@@ -86,9 +86,16 @@ def load_data():
         "https://www.googleapis.com/auth/drive",
     ]
 
-    # Streamlit Cloud上に gcp_json があればそれをパースして使う
-    if "gcp_json" in st.secrets:
-        creds_info = json.loads(st.secrets["gcp_json"])
+    if "gcp_service_account" in st.secrets:
+        creds_info = dict(st.secrets["gcp_service_account"])
+        
+        # private_key の表記ブレ（\n, \\n, 余分なクォート, 改行など）をすべて自動正規化
+        pk = str(creds_info.get("private_key", "")).strip()
+        if (pk.startswith('"') and pk.endswith('"')) or (pk.startswith("'") and pk.endswith("'")):
+            pk = pk[1:-1]
+        pk = pk.replace("\\n", "\n").replace("\r\n", "\n").strip()
+        creds_info["private_key"] = pk
+
         creds = Credentials.from_service_account_info(
             creds_info, scopes=scopes
         )
@@ -112,7 +119,6 @@ def load_data():
         df["日付_dt"] = pd.to_datetime(df["日付"], errors="coerce")
 
     return df
-
 
 try:
     df = load_data()
