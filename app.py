@@ -1,5 +1,4 @@
 import datetime
-import json
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
@@ -78,7 +77,30 @@ if st.button("🔄 スプレッドシートの最新データを強制再読み�
     st.rerun()
 
 
-# 1. データ読み込み（どんな形式の鍵でも自動正規化する超強固版）
+# 鍵のフォーマットを完璧に補正・再構築する関数
+def clean_private_key(key_str: str) -> str:
+    if not key_str:
+        return key_str
+    
+    key_str = key_str.strip()
+    if (key_str.startswith('"') and key_str.endswith('"')) or (key_str.startswith("'") and key_str.endswith("'")):
+        key_str = key_str[1:-1].strip()
+    
+    key_str = key_str.replace("\\n", "\n")
+    
+    header = "-----BEGIN PRIVATE KEY-----"
+    footer = "-----END PRIVATE KEY-----"
+    
+    if header in key_str and footer in key_str:
+        parts = key_str.split(header)
+        body = parts[1].split(footer)[0]
+        body_clean = "".join(body.split())
+        key_str = f"{header}\n{body_clean}\n{footer}\n"
+        
+    return key_str
+
+
+# 1. データ読み込み（自動復元対応）
 @st.cache_data(ttl=60)
 def load_data():
     scopes = [
@@ -86,16 +108,11 @@ def load_data():
         "https://www.googleapis.com/auth/drive",
     ]
 
+    # Streamlit Cloud上に secrets 設定があればそれを使用
     if "gcp_service_account" in st.secrets:
         creds_info = dict(st.secrets["gcp_service_account"])
+        creds_info["private_key"] = clean_private_key(str(creds_info.get("private_key", "")))
         
-        # private_key の表記ブレ（\n, \\n, 余分なクォート, 改行など）をすべて自動正規化
-        pk = str(creds_info.get("private_key", "")).strip()
-        if (pk.startswith('"') and pk.endswith('"')) or (pk.startswith("'") and pk.endswith("'")):
-            pk = pk[1:-1]
-        pk = pk.replace("\\n", "\n").replace("\r\n", "\n").strip()
-        creds_info["private_key"] = pk
-
         creds = Credentials.from_service_account_info(
             creds_info, scopes=scopes
         )
@@ -119,6 +136,7 @@ def load_data():
         df["日付_dt"] = pd.to_datetime(df["日付"], errors="coerce")
 
     return df
+
 
 try:
     df = load_data()
