@@ -88,10 +88,10 @@ def load_data():
     # Streamlit Cloud上に設定（secrets）があればそれを使い、なければローカルのjsonを使う
     if "gcp_service_account" in st.secrets:
         creds_info = dict(st.secrets["gcp_service_account"])
-        # 改行記号が文字列 "\n" になっている場合に実際の改行へ変換
-        if "\\n" in creds_info["private_key"]:
-            creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
-            
+        # 改行記号（\n や \\n）を確実に正規化してPEMエラーを防ぐ
+        pk = str(creds_info.get("private_key", ""))
+        creds_info["private_key"] = pk.replace("\\n", "\n")
+
         creds = Credentials.from_service_account_info(
             creds_info, scopes=scopes
         )
@@ -115,6 +115,8 @@ def load_data():
         df["日付_dt"] = pd.to_datetime(df["日付"], errors="coerce")
 
     return df
+
+
 try:
     df = load_data()
 
@@ -158,14 +160,12 @@ try:
     st.subheader("🔍 コース・条件指定（複数選択可）")
     cols_search = st.columns(5)
 
-
     def get_options(col_name):
         if col_name in df.columns:
             return sorted(
                 list(set([str(x) for x in df[col_name].unique() if str(x).strip() != ""]))
             )
         return []
-
 
     s_course = cols_search[0].multiselect(
         "競馬場", get_options("競馬場"), placeholder="すべて"
@@ -247,7 +247,6 @@ try:
 
     st.info(f"🔍 該当件数: {len(d):,} 件")
 
-
     # 4. ランキング表示関数
     def show_rank(data, target_col, title, keyword="", sort_by="出走数"):
         st.subheader(title)
@@ -315,7 +314,6 @@ try:
             hide_index=True,
             height=210,
         )
-
 
     # 5. ランキング表示（縦に1列で並べる）
     kw = search_keyword.strip()
