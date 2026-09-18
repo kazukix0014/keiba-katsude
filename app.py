@@ -87,9 +87,11 @@ def load_data():
 
     # Streamlit Cloud上に設定（secrets）があればそれを使い、なければローカルのjsonを使う
     if "gcp_service_account" in st.secrets:
-        # secretsから情報を取得し、\\n を実際の改行コード \n に置換
         creds_info = dict(st.secrets["gcp_service_account"])
-        creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
+        # 改行記号が文字列 "\n" になっている場合に実際の改行へ変換
+        if "\\n" in creds_info["private_key"]:
+            creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
+            
         creds = Credentials.from_service_account_info(
             creds_info, scopes=scopes
         )
