@@ -77,7 +77,7 @@ if st.button("🔄 スプレッドシートの最新データを強制再読み�
     st.rerun()
 
 
-# 1. データ読み込み（secret-key.jsonを使用！）
+# 1. データ読み込み（ローカルとクラウドの自動切り替え対応）
 @st.cache_data(ttl=60)
 def load_data():
     scopes = [
@@ -86,16 +86,12 @@ def load_data():
     ]
 
     # Streamlit Cloud上に設定（secrets）があればそれを使い、なければローカルのjsonを使う
-  if "gcp_service_account" in st.secrets:
+    if "gcp_service_account" in st.secrets:
         # secretsから情報を取得し、\\n を実際の改行コード \n に置換
         creds_info = dict(st.secrets["gcp_service_account"])
         creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
         creds = Credentials.from_service_account_info(
             creds_info, scopes=scopes
-        )
-    else:
-        creds = Credentials.from_service_account_file(
-            "secret-key.json", scopes=scopes
         )
     else:
         creds = Credentials.from_service_account_file(
@@ -117,7 +113,6 @@ def load_data():
         df["日付_dt"] = pd.to_datetime(df["日付"], errors="coerce")
 
     return df
-
 try:
     df = load_data()
 
