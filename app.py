@@ -1,4 +1,5 @@
 import datetime
+import json
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
@@ -77,7 +78,7 @@ if st.button("🔄 スプレッドシートの最新データを強制再読み�
     st.rerun()
 
 
-# 1. データ読み込み（ローカルとクラウドの自動切り替え対応）
+# 1. データ読み込み（JSONまるごと対応版）
 @st.cache_data(ttl=60)
 def load_data():
     scopes = [
@@ -85,13 +86,9 @@ def load_data():
         "https://www.googleapis.com/auth/drive",
     ]
 
-    # Streamlit Cloud上に設定（secrets）があればそれを使い、なければローカルのjsonを使う
-    if "gcp_service_account" in st.secrets:
-        creds_info = dict(st.secrets["gcp_service_account"])
-        # 改行記号（\n や \\n）を確実に正規化してPEMエラーを防ぐ
-        pk = str(creds_info.get("private_key", ""))
-        creds_info["private_key"] = pk.replace("\\n", "\n")
-
+    # Streamlit Cloud上に gcp_json があればそれをパースして使う
+    if "gcp_json" in st.secrets:
+        creds_info = json.loads(st.secrets["gcp_json"])
         creds = Credentials.from_service_account_info(
             creds_info, scopes=scopes
         )
