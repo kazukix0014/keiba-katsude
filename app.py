@@ -75,8 +75,9 @@ def load_data():
         "https://www.googleapis.com/auth/drive",
     ]
 
-    # Secrets から認証情報を読み込む
-    creds_info = dict(st.secrets["gcp_service_account"])
+    # まるごと貼ったJSONを正しく復元して読み込む
+    import json
+    creds_info = json.loads(st.secrets["gcp_json"])
     creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
 
     gc = gspread.authorize(creds)
