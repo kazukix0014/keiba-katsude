@@ -75,8 +75,9 @@ def load_data():
         "https://www.googleapis.com/auth/drive",
     ]
 
-    # ファイルから直接認証（Secretsを使わない設定）
-    creds = Credentials.from_service_account_file("secret-key.json", scopes=scopes)
+    # Secrets から認証情報を読み込む
+    creds_info = dict(st.secrets["gcp_service_account"])
+    creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
 
     gc = gspread.authorize(creds)
     sh = gc.open("競馬データ")
