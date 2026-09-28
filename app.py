@@ -75,7 +75,7 @@ def load_data():
         "https://www.googleapis.com/auth/drive",
     ]
 
-    # secret-key.json から直接認証（エラーを回避するためファイル直接参照）
+    # ファイルから直接認証（Secretsを使わない設定）
     creds = Credentials.from_service_account_file("secret-key.json", scopes=scopes)
 
     gc = gspread.authorize(creds)
