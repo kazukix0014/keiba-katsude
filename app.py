@@ -75,9 +75,13 @@ def load_data():
         "https://www.googleapis.com/auth/drive",
     ]
 
-    # まるごと貼ったJSONを正しく復元して読み込む
     import json
     creds_info = json.loads(st.secrets["gcp_json"])
+
+    # ▼▼▼ 魔法の1行を追加： \n を本物の改行に変換する ▼▼▼
+    creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
+    # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
     creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
 
     gc = gspread.authorize(creds)
@@ -95,7 +99,6 @@ def load_data():
         df["日付_dt"] = pd.to_datetime(df["日付"], errors="coerce")
 
     return df
-
 
 try:
     df = load_data()
