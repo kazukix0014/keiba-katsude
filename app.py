@@ -77,11 +77,6 @@ def load_data():
 
     import json
     creds_info = json.loads(st.secrets["gcp_json"])
-
-    # ▼▼▼ 魔法の1行を追加： \n を本物の改行に変換する ▼▼▼
-    creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
-    # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
     creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
 
     gc = gspread.authorize(creds)
